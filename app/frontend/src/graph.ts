@@ -1,21 +1,32 @@
-import { graphConfig } from "./authConfig";
-
-/**
- * Attaches a given access token to a MS Graph API call. Returns information about the user
- * @param accessToken 
- */
-export async function callMsGraph(accessToken: String) {
+export async function hasDocumentUploaderRole(accessToken: string): Promise<boolean> {
     const headers = new Headers();
-    const bearer = `Bearer ${accessToken}`;
+    headers.append("Authorization", `Bearer ${accessToken}`);
+    headers.append("Content-Type", "application/json");
 
-    headers.append("Authorization", bearer);
+    const documentUploaderRoleId = "<DOCUMENT_UPLOADER_ROLE_ID">;
 
-    const options = {
-        method: "GET",
-        headers: headers
-    };
+    try {
+        const response = await fetch("https://graph.microsoft.com/v1.0/me/appRoleAssignments", {
+            method: "GET",
+            headers: headers,
+        });
 
-    return fetch(graphConfig.graphMeEndpoint, options)
-        .then(response => response.json())
-        .catch(error => console.log(error));
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("=====> DATA : ", data);
+
+        // Ensure data.value exists and is an array
+        if (!data.value || !Array.isArray(data.value)) {
+            return false;
+        }
+
+        // Check if the user has the "DocumentUploader" role
+        return data.value.some((assignment: { appRoleId: string }) => assignment.appRoleId === documentUploaderRoleId);
+    } catch (error) {
+        console.error("Error fetching user appRoleAssignments:", error);
+        return false;
+    }
 }
