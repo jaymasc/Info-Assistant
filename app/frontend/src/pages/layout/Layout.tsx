@@ -10,7 +10,11 @@ import { Title } from "../../components/Title/Title";
 import { getFeatureFlags, GetFeatureFlagsResponse } from "../../api";
 import { useEffect, useState } from "react";
 
-export const Layout = () => {
+interface LayoutProps {
+    showContentNav: boolean;
+}
+
+export const Layout = ({ showContentNav }: LayoutProps) => {
     const [featureFlags, setFeatureFlags] = useState<GetFeatureFlagsResponse | null>(null);
 
     async function fetchFeatureFlags() {
@@ -43,11 +47,13 @@ export const Layout = () => {
                                     Chat
                                 </NavLink>
                             </li>
-                            <li className={styles.headerNavLeftMargin}>
-                                <NavLink to="/content" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    Manage Content
-                                </NavLink>
-                            </li>
+                            {showContentNav && (
+                                <li className={styles.headerNavLeftMargin}>
+                                    <NavLink to="/content" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
+                                        Manage Content
+                                    </NavLink>
+                                </li>
+                            )}
                             {featureFlags?.ENABLE_MATH_ASSISTANT &&
                                 <li className={styles.headerNavLeftMargin}>
                                     <NavLink to="/tutor" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>

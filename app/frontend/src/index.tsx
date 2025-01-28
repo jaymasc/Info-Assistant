@@ -56,7 +56,7 @@ export default function App() {
             <AuthenticatedTemplate>
                 <HashRouter>
                     <Routes>
-                        <Route path="/" element={<Layout />}>
+                        <Route path="/" element={<Layout showContentNav={userInfo.canUploadDocuments} />}>
                             <Route index element={<Chat />} />
                             <Route path="content" element={<Content />} />
                             <Route path="*" element={<NoPage />} />
