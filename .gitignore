@@ -405,3 +405,6 @@ azcopy_dir
 #Openvpn setting
 openvpn/*
 !openvpn/info.txt
+
+#Authentication
+!authConfig.generated.ts

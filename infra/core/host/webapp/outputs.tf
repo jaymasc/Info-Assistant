@@ -13,3 +13,11 @@ output "uri" {
 output "web_serviceplan_name" {
   value = azurerm_service_plan.appServicePlan.name
 }
+
+output "tenantId" {
+  value = var.tenantId
+}
+
+output "aadClientId" {
+  value = var.aadClientId
+}

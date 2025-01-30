@@ -223,3 +223,15 @@ output "AZURE_OPENAI_AUTHORITY_HOST" {
 output "AZURE_SEARCH_AUDIENCE" {
   value = var.azure_search_scope
 }
+
+output "AZURE_AD_APP_CLIENT_ID" {
+  value = module.webapp.aadClientId
+}
+
+output "AZURE_TENANT_ID" {
+  value = module.webapp.tenantId
+}
+
+output "WEBAPP_REDIRECT_URI" {
+  value = module.webapp.uri
+}

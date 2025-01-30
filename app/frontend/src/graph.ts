@@ -3,7 +3,7 @@ export async function hasDocumentUploaderRole(accessToken: string): Promise<bool
     headers.append("Authorization", `Bearer ${accessToken}`);
     headers.append("Content-Type", "application/json");
 
-    const documentUploaderRoleId = "<DOCUMENT_UPLOADER_ROLE_ID">;
+    const documentUploaderRoleId = "<DOCUMENT_UPLOADER_ROLE_ID>";
 
     try {
         const response = await fetch("https://graph.microsoft.com/v1.0/me/appRoleAssignments", {
