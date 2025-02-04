@@ -274,3 +274,7 @@ resource "azurerm_private_endpoint" "backendPrivateEndpoint" {
     private_dns_zone_ids = var.private_dns_zone_ids
   }
 }
+
+data "azuread_application" "app" {
+  client_id = var.aadClientId
+}

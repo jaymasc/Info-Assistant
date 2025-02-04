@@ -21,6 +21,18 @@ resource "azuread_application" "aad_web_app" {
       id_token_issuance_enabled     = true
     }
   }
+
+  # spa {
+  #   redirect_uris = ["https://infoasst-web-${var.randomString}.${var.azure_websites_domain}"]
+  # }
+  
+  app_role {
+      allowed_member_types = ["User"]
+      description          = "Allows users to upload documents"
+      display_name         = "documentUploader"
+      id                  = uuid() # Generates a unique UUID at plan time
+      value               = "documentUploader"
+  }
 }
 
 

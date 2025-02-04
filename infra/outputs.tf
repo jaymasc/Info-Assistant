@@ -235,3 +235,7 @@ output "AZURE_TENANT_ID" {
 output "WEBAPP_REDIRECT_URI" {
   value = module.webapp.uri
 }
+
+output "WEBAPP_DOCUMENT_UPLOADER_ROLE_ID" {
+  value = module.webapp.document_uploader_role_id
+}

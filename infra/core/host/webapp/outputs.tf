@@ -21,3 +21,7 @@ output "tenantId" {
 output "aadClientId" {
   value = var.aadClientId
 }
+
+output "document_uploader_role_id" {
+  value = [for role in data.azuread_application.app.app_roles : role.id if role.display_name == "documentUploader"][0]
+}

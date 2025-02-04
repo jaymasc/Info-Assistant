@@ -9,10 +9,10 @@ TERRAFORM_DIR="${DIR}/..//infra"
 APP_CLIENT_ID=$(terraform -chdir=$TERRAFORM_DIR output -raw AZURE_AD_APP_CLIENT_ID)
 TENANT_ID=$(terraform -chdir=$TERRAFORM_DIR output -raw AZURE_TENANT_ID)
 REDIRECT_URI=$(terraform -chdir=$TERRAFORM_DIR output -raw WEBAPP_REDIRECT_URI)
+DOCUMENT_UPLOADER_ROLE_ID=$(terraform -chdir=$TERRAFORM_DIR output -raw WEBAPP_DOCUMENT_UPLOADER_ROLE_ID)
 
 # Validate outputs
-# if [[ -z "$APP_CLIENT_ID" || -z "$TENANT_ID" || -z "$REDIRECT_URI" ]]; then
-if [[ -z "$APP_CLIENT_ID" || -z "$TENANT_ID" ]]; then
+if [[ -z "$APP_CLIENT_ID" || -z "$TENANT_ID" || -z "$REDIRECT_URI" ]]; then
     echo "Error: One or more Terraform outputs are missing!"
     exit 1
 fi
@@ -26,7 +26,8 @@ cat <<EOL > "$GENERATED_CONFIG_FILE"
 export const config = {
     clientId: "${APP_CLIENT_ID}",
     tenantId: "${TENANT_ID}",
-    redirectUri: "${REDIRECT_URI}"
+    redirectUri: "${REDIRECT_URI}",
+    documentUploaderRoleId: "${DOCUMENT_UPLOADER_ROLE_ID}"
 };
 EOL
 
