@@ -9,7 +9,7 @@ help: ## Show this help
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%s\033[0m|%s\n", $$1, $$2}' \
         | column -t -s '|'
 
-deploy: infrastructure update-auth-config build extract-env deploy-search-indexes deploy-functions deploy-webapp deploy-enrichments ## Deploy infrastructure and application code
+deploy: infrastructure build extract-env deploy-search-indexes deploy-functions deploy-webapp deploy-enrichments ## Deploy infrastructure and application code
  
 build-deploy-webapp: build extract-env deploy-webapp ##Build and Deploy the Webapp
 build-deploy-enrichments: build extract-env deploy-enrichments ##Build and Deploy the Enrichment Webapp
@@ -20,9 +20,6 @@ build: ## Build application code
 
 infrastructure: check-subscription ## Deploy infrastructure
 	@./scripts/inf-create.sh
-
-update-auth-config:
-	@./scripts/update-auth-config.sh
 
 extract-env: check-secure-mode-connectivity extract-env-debug-webapp extract-env-debug-functions ## Extract infrastructure.env file from Terraform output
 	 @./scripts/json-to-env.sh < inf_output.json > ./scripts/environments/infrastructure.env
