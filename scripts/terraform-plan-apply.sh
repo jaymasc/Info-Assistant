@@ -124,6 +124,7 @@ then
     # Save plan to txt file for easier verification
     printInfo "Saving plan to $DIR/$PLAN_NAME.tfplan.txt"
     terraform show -no-color "$PLAN_NAME" > "$PLAN_NAME.tfplan.txt"
+    terraform show -json "$PLAN_NAME" | jq '.' > "$PLAN_NAME".json
 
     if [ -z $SKIP_PLAN_CHECK ]
     then

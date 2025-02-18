@@ -94,7 +94,7 @@ resource "azurerm_linux_web_app" "app_service" {
     }
     container_registry_use_managed_identity = true
     always_on                               = var.alwaysOn
-    ftps_state                              = var.is_secure_mode ? "Disabled" : var.ftpsState
+    ftps_state                              = "Disabled"
     app_command_line                        = var.appCommandLine
     health_check_path                       = var.healthCheckPath
     health_check_eviction_time_in_min       = 10
@@ -152,7 +152,7 @@ resource "azurerm_linux_web_app" "app_service" {
       ]
     }
     login{
-      token_store_enabled = false
+      token_store_enabled = true
     }
   }
 }

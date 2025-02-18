@@ -5,13 +5,6 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { initializeIcons } from "@fluentui/react";
-import { PublicClientApplication } from "@azure/msal-browser";
-import { MsalProvider } from "@azure/msal-react";
-import { msalConfig } from "./authConfig";
-import { useUserInfo } from "./useUserInfo";
-
-import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
-import { SignInButton } from "./SignInButton";
 
 import "./index.css";
 
@@ -21,63 +14,36 @@ import Chat from "./pages/chat/Chat";
 import Content from "./pages/content/Content";
 import Tutor from "./pages/tutor/Tutor";
 import { Tda } from "./pages/tda/Tda";
+import { useEasyAuthUser } from "./useEasyAuthUser";
 
 initializeIcons();
 
-const msalInstance = new PublicClientApplication(msalConfig);
-
 export default function App() {
-    const userInfo = useUserInfo();
+    const userInfo = useEasyAuthUser();  // Fetch user info via Easy Auth
 
-    useEffect(() => {
-        msalInstance
-            .initialize()
-            .then(() => {
-                msalInstance
-                    .handleRedirectPromise()
-                    .then((response) => {
-                        if (response) {
-                            console.log("=====> Login successful", response);
-                            console.log("=====> Account Name: ", userInfo.name);
-                            console.log("=====> Can Upload Documents: ", userInfo.canUploadDocuments);
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("=====> Login error", error);
-                    });
-            })
-            .catch((error) => {
-                console.error("=====> MSAL Initialization error", error);
-            });
-    }, [userInfo]);
+    if (!userInfo.isAuthenticated) {
+        return <div>Loading...</div>; // Optionally add a loading state
+    }
 
     return (
         <div className="App">
-            <AuthenticatedTemplate>
-                <HashRouter>
-                    <Routes>
-                        <Route path="/" element={<Layout showContentNav={userInfo.canUploadDocuments} />}>
-                            <Route index element={<Chat />} />
-                            <Route path="content" element={<Content />} />
-                            <Route path="*" element={<NoPage />} />
-                            <Route path="tutor" element={<Tutor />} />
-                            <Route path="tda" element={<Tda folderPath={""} tags={[]} />} />
-                        </Route>
-                    </Routes>
-                </HashRouter>
-            </AuthenticatedTemplate>
-
-            <UnauthenticatedTemplate>
-                <SignInButton />
-            </UnauthenticatedTemplate>
+            <HashRouter>
+                <Routes>
+                    <Route path="/" element={<Layout showContentNav={userInfo.canUploadDocuments} />}>
+                        <Route index element={<Chat />} />
+                        <Route path="content" element={<Content />} />
+                        <Route path="*" element={<NoPage />} />
+                        <Route path="tutor" element={<Tutor />} />
+                        <Route path="tda" element={<Tda folderPath={""} tags={[]} />} />
+                    </Route>
+                </Routes>
+            </HashRouter>
         </div>
     );
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-        <MsalProvider instance={msalInstance}>
-            <App />
-        </MsalProvider>
+        <App />
     </React.StrictMode>
 );
