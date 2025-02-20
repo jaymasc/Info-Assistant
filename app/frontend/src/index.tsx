@@ -19,17 +19,18 @@ import { useEasyAuthUser } from "./useEasyAuthUser";
 initializeIcons();
 
 export default function App() {
-    const userInfo = useEasyAuthUser();  // Fetch user info via Easy Auth
+    const userInfo = useEasyAuthUser();
+    const [canUploadDocuments, setCanUploadDocuments] = useState(userInfo.canUploadDocuments);
 
-    if (!userInfo.isAuthenticated) {
-        return <div>Loading...</div>; // Optionally add a loading state
-    }
+    useEffect(() => {
+        setCanUploadDocuments(userInfo.canUploadDocuments);
+    }, [userInfo.canUploadDocuments]); // Re-run when authentication state changes
 
     return (
         <div className="App">
             <HashRouter>
                 <Routes>
-                    <Route path="/" element={<Layout showContentNav={userInfo.canUploadDocuments} />}>
+                    <Route path="/" element={<Layout showContentNav={canUploadDocuments} />}>
                         <Route index element={<Chat />} />
                         <Route path="content" element={<Content />} />
                         <Route path="*" element={<NoPage />} />

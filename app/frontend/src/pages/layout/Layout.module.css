@@ -15,13 +15,17 @@
 .layout {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
     background-color: #f2f2f2;
 }
 
 .header {
     background-color: #222222;
     color: #f2f2f2;
+}
+
+.footer {
+    margin-top: auto; /* Pushes footer to the bottom */
 }
 
 .headerContainer {
