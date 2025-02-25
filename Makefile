@@ -93,3 +93,6 @@ run-backend-tests: ## Run backend tests
 	pip install -r ./app/backend/requirements.txt --disable-pip-version-check -q
 	pytest ./app/backend/testsuite.py
 
+run-evaluation-suite: ## Run tests to evaluate quality of answers
+	pytest -s ./app/backend/evaluation_suite.py
+

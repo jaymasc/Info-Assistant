@@ -1,0 +1,19 @@
+[
+    {
+      "question": "What is the new user cold start problem in collaborative filtering (CF) recommender systems?",
+      "answer": "The new user cold start problem occurs when a system cannot generate personalized and relevant recommendations for a user who has just registered and has no or few preference data available in the target domain."
+    },
+    {
+      "question": "How does the personality-based binary predicted method perform in acquiring likes compared to other methods?",
+      "answer": "The personality-based binary predicted method outperforms other methods by acquiring, on average per user, 0.142, 0.165, and 0.153 likes in the books, movies, and music domains, respectively."
+    },
+    {
+      "question": "What are the two main types of cross-domain recommendation approaches mentioned in the document?",
+      "answer": "The two main types of cross-domain recommendation approaches are knowledge aggregation methods, which merge user preferences from various domains, and knowledge linkage and transfer methods, which relate domains by common knowledge or share implicit latent features."
+    },
+    {
+      "question": "How does one evaluate a personality based matrix factorization?",
+      "answer": "By building a castle in the clouds."
+    }  
+]
+  
