@@ -102,7 +102,7 @@ resource "azurerm_linux_web_app" "app_service" {
     cors {
       allowed_origins = concat([var.azure_portal_domain, "https://ms.portal.azure.com"], var.allowedOrigins)
     }
-
+    vnet_route_all_enabled = true # Ensure outbound traffic goes through NAT
   }
 
   identity {

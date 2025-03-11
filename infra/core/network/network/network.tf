@@ -164,3 +164,40 @@ resource "azurerm_private_dns_resolver_inbound_endpoint" "private_dns_resolver" 
 
     depends_on = [ azurerm_private_dns_resolver.private_dns_resolver ]
 }
+
+# Create a Public IP for the NAT Gateway
+resource "azurerm_public_ip" "nat_gateway_public_ip" {
+  name                = var.public_ip_name
+  location            = var.location
+  resource_group_name = var.resourceGroupName
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
+
+# Create a NAT Gateway
+resource "azurerm_nat_gateway" "nat_gateway" {
+  name                = var.nat_gateway_name
+  location            = var.location
+  resource_group_name = var.resourceGroupName
+  sku_name            = "Standard"
+  idle_timeout_in_minutes = 4
+  tags                = var.tags
+}
+
+# Associate Public IP with NAT Gateway
+resource "azurerm_nat_gateway_public_ip_association" "nat_gateway_ip_assoc" {
+  nat_gateway_id       = azurerm_nat_gateway.nat_gateway.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway_public_ip.id
+}
+
+# Associate NAT Gateway with Subnets (App and Integration)
+resource "azurerm_subnet_nat_gateway_association" "nat_gateway_app" {
+  subnet_id      = data.azurerm_subnet.app.id
+  nat_gateway_id = azurerm_nat_gateway.nat_gateway.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "nat_gateway_integration" {
+  subnet_id      = data.azurerm_subnet.integration.id
+  nat_gateway_id = azurerm_nat_gateway.nat_gateway.id
+}

@@ -101,3 +101,13 @@ variable "azure_environment" {
 variable "enabledDDOSProtectionPlan" {
   type = bool
 }
+
+variable "nat_gateway_name" {
+  type    = string
+  default = "nat-gateway"
+}
+
+variable "public_ip_name" {
+  type    = string
+  default = "nat-gateway-public-ip"
+}
