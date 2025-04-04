@@ -125,6 +125,10 @@ jq -r  '
         {
             "path": "DNS_PRIVATE_RESOLVER_IP",
             "env_var": "DNS_PRIVATE_RESOLVER_IP"
+        },
+        {
+            "path": "AZURE_KEYVAULT_URI",
+            "env_var": "AZURE_KEYVAULT_URI"
         }
     ]
         as $env_vars_to_extract

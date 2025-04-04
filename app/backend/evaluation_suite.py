@@ -10,6 +10,7 @@ import re
 import pytest
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 import os
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
@@ -25,6 +26,16 @@ load_dotenv(dotenv_path=f'../../scripts/environments/infrastructure.debug.env')
 
 azure_credentials = DefaultAzureCredential()
 
+key_vault_uri = os.getenv("AZURE_KEYVAULT_URI")
+secret_name = "AZURE-OPENAI-API-KEY"
+
+try:
+    client = SecretClient(vault_url=key_vault_uri, credential=azure_credentials)
+    retrieved_secret = client.get_secret(secret_name)
+    print(retrieved_secret.value)
+except Exception as e:
+    print(f"Error retrieving AZURE-OPENAI-API-KEY secret value: {e}")
+
 from app import app
 client = TestClient(app)
 
@@ -32,7 +43,7 @@ llm = AzureChatOpenAI(
     deployment_name=os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT"),
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    api_key=os.getenv("AZURE_OPENAI_API_KEY")
+    api_key=retrieved_secret.value
 )
 
 # Load questions and answers from JSON file

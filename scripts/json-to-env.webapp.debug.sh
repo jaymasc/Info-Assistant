@@ -159,6 +159,10 @@ jq -r  '
         {
             "path": "AZURE_SEARCH_AUDIENCE",
             "env_var": "AZURE_SEARCH_AUDIENCE"
+        },
+        {
+            "path": "AZURE_KEYVAULT_URI",
+            "env_var": "AZURE_KEYVAULT_URI"
         }
     ]
         as $env_vars_to_extract

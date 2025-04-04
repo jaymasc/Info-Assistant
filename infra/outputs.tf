@@ -155,6 +155,10 @@ output "AZURE_KEYVAULT_NAME" {
   value = module.kvModule.keyVaultName
 }
 
+output "AZURE_KEYVAULT_URI" {
+  value = module.kvModule.keyVaultUri
+}
+
 output "CHAT_WARNING_BANNER_TEXT" {
   value = var.chatWarningBannerText
 }
