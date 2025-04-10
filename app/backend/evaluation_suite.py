@@ -1,5 +1,6 @@
 import json
 import requests
+import pandas as pd
 from ragas.metrics import context_precision, context_recall, faithfulness
 from ragas.evaluation import evaluate
 from ragas import SingleTurnSample, EvaluationDataset
@@ -46,10 +47,25 @@ llm = AzureChatOpenAI(
     api_key=retrieved_secret.value
 )
 
-# Load questions and answers from JSON file
-def load_questions_answers(file_path: str):
+# Load questions and answers from JSON file (unused for now)
+def load_questions_answers_from_json(file_path: str):
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+# Load questions and answers from Excel file using column names
+def load_questions_answers_from_excel(file_path: str):
+    df = pd.read_excel(file_path)
+    df.columns = [col.strip().lower() for col in df.columns]
+
+    if "question" not in df.columns or "answer" not in df.columns:
+        raise ValueError("Excel file must contain 'question' and 'answer' columns.")
+
+    qa_pairs = df[["question", "answer"]].dropna().apply(
+        lambda row: {"question": str(row["question"]).strip(), "answer": str(row["answer"]).strip()},
+        axis=1
+    ).tolist()
+
+    return qa_pairs
 
 # Call the /chat API endpoint
 def call_chat_api(question: str):
@@ -98,8 +114,8 @@ def compute_balanced_accuracy(TP, FP, FN):
     return TP / (TP + 0.5 * (FP + FN))
 
 def main():
-    file_path = "./test_data/questions_and_answers.json"
-    qa_pairs = load_questions_answers(file_path)
+    file_path = "./test_data/question-answer.xlsx"
+    qa_pairs = load_questions_answers_from_excel(file_path)
     
     samples = []
     

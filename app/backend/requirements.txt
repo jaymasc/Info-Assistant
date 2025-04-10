@@ -1,6 +1,7 @@
 #### Any version change made here should also be made and tested for the enrichment and function apps in /functions and /app/enrichment
 azure-cosmos==4.7.0
 azure-identity==1.18.0
+azure-keyvault-secrets==4.9.0
 azure-mgmt-cognitiveservices==13.5.0
 azure-search-documents==11.5.1
 azure-storage-blob==12.23.0
@@ -17,6 +18,7 @@ matplotlib==3.9.2
 microsoft-bing-websearch==1.0.0
 numexpr==2.10.1
 openai==1.55.3
+openpyxl==3.1.5
 pandas==2.2.3
 Pillow==10.4.0
 PyJWT==2.10.1
