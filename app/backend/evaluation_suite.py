@@ -2,6 +2,7 @@ import json
 import requests
 import pandas as pd
 from ragas.metrics import context_precision, context_recall, faithfulness
+from ragas.metrics import FactualCorrectness
 from ragas.evaluation import evaluate
 from ragas import SingleTurnSample, EvaluationDataset
 from typing import List
@@ -102,23 +103,13 @@ def call_chat_api(question: str):
     
     return content, data_points
 
-def compute_tp_fp_fn(precision, recall, total_samples):
-    """Compute True Positives, False Positives, and False Negatives"""
-    TP = round(precision * total_samples)   # True Positives
-    FN = round((1 - recall) * total_samples) # False Negatives
-    FP = total_samples - TP                  # False Positives (remaining retrieved cases)
-    return TP, FP, FN
-
-def compute_balanced_accuracy(TP, FP, FN):
-    """Compute Balanced Accuracy (Fowlkes-Mallows Index)"""
-    return TP / (TP + 0.5 * (FP + FN))
-
 def main():
-    file_path = "./test_data/question-answer.xlsx"
+    file_path = "./test_data/deloitte-question-answer.xlsx"
     qa_pairs = load_questions_answers_from_excel(file_path)
     
     samples = []
-    
+    answer_not_found_count = 0
+
     for qa in qa_pairs:
         question = qa["question"]
         answer = qa["answer"]
@@ -129,7 +120,12 @@ def main():
         print("Question: ", question)
         print("Answer: ", answer)
         print("Response: ", response)
-        print("Context: ", data_points)
+        # print("Context: ", data_points)
+
+        if "The provided sources do not contain" in response:
+            print("Answer not found. Skipping...")
+            answer_not_found_count += 1
+            continue
 
         sample = SingleTurnSample(
             user_input=question,
@@ -139,33 +135,69 @@ def main():
         )
         samples.append(sample)
     
+    print(f"\nNumber of cases where no answer was found: {answer_not_found_count}")
+
     # Create dataset for evaluation
     dataset = EvaluationDataset(samples=samples)
     
     # Compute Context Precision, Context Recall, and Faithfulness
-    scores = evaluate(dataset, [context_precision, context_recall, faithfulness], llm=llm)
+    scores = evaluate(dataset, [context_precision, context_recall, faithfulness, FactualCorrectness()], llm=llm)
     print(scores)
 
-    precision = np.mean(scores['context_precision'])
-    recall = np.mean(scores['context_recall'])
-    faithfulness_score = np.mean(scores['faithfulness'])
+    print("Before NaN removal:")
+    print("Context Precision:")
+    print(scores['context_precision'])
 
-    # Compute TP, FP, FN
-    total_samples = len(samples)
-    TP, FP, FN = compute_tp_fp_fn(precision, recall, total_samples)
-    
-    # Compute Balanced Accuracy
-    balanced_accuracy = compute_balanced_accuracy(TP, FP, FN)
+    print("Context Recall:")
+    print(scores['context_recall'])
+
+    print("Faithfulness:")
+    print(scores['faithfulness'])
+
+    print("Factual Correctness:")
+    print(scores['factual_correctness(mode=f1)'])
+
+    # Remove any NaN values
+    context_precision_scores = scores['context_precision']
+    context_precision_array = np.array(context_precision_scores)
+    context_precision_scores_clean = context_precision_array[~np.isnan(context_precision_array)]
+
+    context_recall_scores = scores['context_recall']
+    context_recall_array = np.array(context_recall_scores)
+    context_recall_scores_clean = context_recall_array[~np.isnan(context_recall_array)]
+
+    faithfulness_scores = scores['faithfulness']
+    faithfulness_array = np.array(faithfulness_scores)
+    faithfulness_scores_clean = faithfulness_array[~np.isnan(faithfulness_array)]
+
+    factual_correctness_scores = scores['factual_correctness(mode=f1)']
+    factual_correctness_array = np.array(factual_correctness_scores)
+    factual_correctness_scores_clean = factual_correctness_array[~np.isnan(factual_correctness_array)]
+
+    print("After NaN removal:")
+    print("Context Precision:")
+    print(context_precision_scores_clean)
+
+    print("Context Recall:")
+    print(context_recall_scores_clean)
+
+    print("Faithfulness:")
+    print(faithfulness_scores_clean)
+
+    print("Factual Correctness:")
+    print(factual_correctness_scores_clean)
+
+    precision = np.mean(context_precision_scores_clean)
+    recall = np.mean(context_recall_scores_clean)
+    faithfulness_score = np.mean(faithfulness_scores_clean)
+    factual_correctness_score = np.mean(factual_correctness_scores_clean)
 
     # Print Results
     print("\n\nEvaluation Metrics:")
     print(f"Context Precision Score: {precision:.2f}")
     print(f"Context Recall Score: {recall:.2f}")
     print(f"Faithfulness Score: {faithfulness_score:.2f}")
-    print(f"True Positives (TP): {TP}")
-    print(f"False Positives (FP): {FP}")
-    print(f"False Negatives (FN): {FN}")
-    print(f"Balanced Accuracy (Fowlkes-Mallows Index): {balanced_accuracy:.2f}")
+    print(f"Factual Correctness Score: {factual_correctness_score:.2f}")
 
 if __name__ == "__main__":
     main()
