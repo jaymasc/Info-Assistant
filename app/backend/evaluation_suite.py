@@ -109,23 +109,21 @@ def main():
     
     samples = []
     answer_not_found_count = 0
+    question_index = 0
 
     for qa in qa_pairs:
         question = qa["question"]
         answer = qa["answer"]
         
         response, data_points = call_chat_api(question)
-        
-        print("\n-----")
-        print("Question: ", question)
-        print("Answer: ", answer)
-        print("Response: ", response)
-        # print("Context: ", data_points)
 
-        if "The provided sources do not contain" in response:
-            print("Answer not found. Skipping...")
+        question_index += 1
+        if "the provided sources do not" in response.lower():
             answer_not_found_count += 1
+            print(f"Answer not found for question {question_index}. Skipping...")
             continue
+        else:
+            print(f"Processed Question {question_index}")
 
         sample = SingleTurnSample(
             user_input=question,
@@ -134,28 +132,16 @@ def main():
             reference=answer
         )
         samples.append(sample)
-    
+
     print(f"\nNumber of cases where no answer was found: {answer_not_found_count}")
 
     # Create dataset for evaluation
     dataset = EvaluationDataset(samples=samples)
     
-    # Compute Context Precision, Context Recall, and Faithfulness
-    scores = evaluate(dataset, [context_precision, context_recall, faithfulness, FactualCorrectness()], llm=llm)
+    # Compute metric scores
+    correctness_instance = FactualCorrectness()
+    scores = evaluate(dataset, [context_precision, context_recall, faithfulness, correctness_instance], llm=llm)
     print(scores)
-
-    print("Before NaN removal:")
-    print("Context Precision:")
-    print(scores['context_precision'])
-
-    print("Context Recall:")
-    print(scores['context_recall'])
-
-    print("Faithfulness:")
-    print(scores['faithfulness'])
-
-    print("Factual Correctness:")
-    print(scores['factual_correctness(mode=f1)'])
 
     # Remove any NaN values
     context_precision_scores = scores['context_precision']
@@ -174,25 +160,22 @@ def main():
     factual_correctness_array = np.array(factual_correctness_scores)
     factual_correctness_scores_clean = factual_correctness_array[~np.isnan(factual_correctness_array)]
 
-    print("After NaN removal:")
-    print("Context Precision:")
-    print(context_precision_scores_clean)
+    # Print per question answer and scores
+    for i, sample in enumerate(samples):
+        print("\n-----")
+        print(f"precision: {context_precision_scores[i]}, recall: {context_recall_scores[i]}, faithfulness: {faithfulness_scores[i]}, correctness: {factual_correctness_scores[i]}")
+        print("Question: ", sample.user_input)
+        print("Answer: ", sample.reference)
+        print("Response: ", sample.response)
+        # print("Context: ", sample.retrieved_contexts)
 
-    print("Context Recall:")
-    print(context_recall_scores_clean)
-
-    print("Faithfulness:")
-    print(faithfulness_scores_clean)
-
-    print("Factual Correctness:")
-    print(factual_correctness_scores_clean)
-
+    # Calculate means for metrics
     precision = np.mean(context_precision_scores_clean)
     recall = np.mean(context_recall_scores_clean)
     faithfulness_score = np.mean(faithfulness_scores_clean)
     factual_correctness_score = np.mean(factual_correctness_scores_clean)
 
-    # Print Results
+    # Print Final Results
     print("\n\nEvaluation Metrics:")
     print(f"Context Precision Score: {precision:.2f}")
     print(f"Context Recall Score: {recall:.2f}")
