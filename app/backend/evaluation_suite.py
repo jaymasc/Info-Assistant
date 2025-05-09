@@ -68,6 +68,60 @@ def load_questions_answers_from_excel(file_path: str):
 
     return qa_pairs
 
+# Save responses and scores to Excel file using column names
+def save_responses_and_scores_to_excel(
+    file_path: str,
+    row: int,
+    precision: float,
+    recall: float,
+    faithfulness: float,
+    correctness: float,
+    response: str,
+    contexts
+):
+    # Load existing Excel file
+    df = pd.read_excel(file_path)
+    
+    # Ensure the required columns exist (case-insensitive)
+    required_columns = ["Precision", "Recall", "Faithfulness", "Correctness", "Response", "Contexts"]
+    for col in required_columns:
+        if col.lower() not in [c.lower() for c in df.columns]:
+            raise ValueError(f"Missing required column in Excel file: '{col}'")
+
+    # Normalize column names to their original case in file
+    col_map = {col.lower(): col for col in df.columns}
+    
+    # Adjust row index (Excel rows are 1-indexed to user; pandas is 0-indexed)
+    row_index = row - 1
+
+    if row_index >= len(df):
+        raise IndexError(f"Row {row} is out of bounds for Excel sheet with {len(df)} rows.")
+
+    # Normalize contexts: extract text if it's a list of dicts/objects
+    context_texts = []
+    for c in contexts:
+        if isinstance(c, str):
+            context_texts.append(c)
+        elif isinstance(c, dict) and "text" in c:
+            context_texts.append(c["text"])
+        elif hasattr(c, "text"):
+            context_texts.append(c.text)
+        else:
+            context_texts.append(str(c))  # fallback
+
+    contexts_str = "\r\n\r\n".join(context_texts)
+
+    # Update values in the DataFrame
+    df.at[row_index, col_map["precision"]] = precision
+    df.at[row_index, col_map["recall"]] = recall
+    df.at[row_index, col_map["faithfulness"]] = faithfulness
+    df.at[row_index, col_map["correctness"]] = correctness
+    df.at[row_index, col_map["response"]] = response
+    df.at[row_index, col_map["contexts"]] = contexts_str
+
+    # Save updated DataFrame back to the same Excel file
+    df.to_excel(file_path, index=False)
+
 # Call the /chat API endpoint
 def call_chat_api(question: str):
     response = client.post("/chat", json={
@@ -107,7 +161,9 @@ def main():
     file_path = "./test_data/deloitte-question-answer.xlsx"
     qa_pairs = load_questions_answers_from_excel(file_path)
     
-    samples = []
+    answered_samples = []
+    answered_sample_indices = []
+
     answer_not_found_count = 0
     question_index = 0
 
@@ -116,9 +172,10 @@ def main():
         answer = qa["answer"]
         
         response, data_points = call_chat_api(question)
+        lowcase_response = response.lower()
 
         question_index += 1
-        if "the provided sources do not" in response.lower():
+        if "the provided sources do not" in lowcase_response or "i am not sure" in lowcase_response:
             answer_not_found_count += 1
             print(f"Answer not found for question {question_index}. Skipping...")
             continue
@@ -131,12 +188,13 @@ def main():
             response=response,
             reference=answer
         )
-        samples.append(sample)
-
+        answered_samples.append(sample)
+        answered_sample_indices.append(question_index)
+    
     print(f"\nNumber of cases where no answer was found: {answer_not_found_count}")
 
     # Create dataset for evaluation
-    dataset = EvaluationDataset(samples=samples)
+    dataset = EvaluationDataset(samples=answered_samples)
     
     # Compute metric scores
     correctness_instance = FactualCorrectness()
@@ -161,13 +219,20 @@ def main():
     factual_correctness_scores_clean = factual_correctness_array[~np.isnan(factual_correctness_array)]
 
     # Print per question answer and scores
-    for i, sample in enumerate(samples):
+    for i, sample in enumerate(answered_samples):
         print("\n-----")
         print(f"precision: {context_precision_scores[i]}, recall: {context_recall_scores[i]}, faithfulness: {faithfulness_scores[i]}, correctness: {factual_correctness_scores[i]}")
         print("Question: ", sample.user_input)
         print("Answer: ", sample.reference)
         print("Response: ", sample.response)
-        # print("Context: ", sample.retrieved_contexts)
+        save_responses_and_scores_to_excel(file_path=file_path,
+                                           row=answered_sample_indices[i],
+                                           precision=context_precision_scores[i],
+                                           recall=context_recall_scores[i],
+                                           faithfulness=faithfulness_scores[i],
+                                           correctness=factual_correctness_scores[i],
+                                           response=sample.response,
+                                           contexts=sample.retrieved_contexts)
 
     # Calculate means for metrics
     precision = np.mean(context_precision_scores_clean)
