@@ -1,8 +1,8 @@
 import json
 import requests
 import pandas as pd
-from ragas.metrics import context_precision, context_recall, faithfulness
-from ragas.metrics import FactualCorrectness
+from ragas.metrics import context_precision, context_recall, faithfulness, answer_relevancy
+from ragas.metrics import FactualCorrectness, RubricsScore
 from ragas.evaluation import evaluate
 from ragas import SingleTurnSample, EvaluationDataset
 from typing import List
@@ -76,6 +76,7 @@ def save_responses_and_scores_to_excel(
     recall: float,
     faithfulness: float,
     correctness: float,
+    rubric: float,
     response: str,
     contexts
 ):
@@ -83,7 +84,7 @@ def save_responses_and_scores_to_excel(
     df = pd.read_excel(file_path)
     
     # Ensure the required columns exist (case-insensitive)
-    required_columns = ["Precision", "Recall", "Faithfulness", "Correctness", "Response", "Contexts"]
+    required_columns = ["Precision", "Recall", "Faithfulness", "Correctness", "Response", "Contexts", "Rubric"]
     for col in required_columns:
         if col.lower() not in [c.lower() for c in df.columns]:
             raise ValueError(f"Missing required column in Excel file: '{col}'")
@@ -116,6 +117,7 @@ def save_responses_and_scores_to_excel(
     df.at[row_index, col_map["recall"]] = recall
     df.at[row_index, col_map["faithfulness"]] = faithfulness
     df.at[row_index, col_map["correctness"]] = correctness
+    df.at[row_index, col_map["rubric"]] = rubric
     df.at[row_index, col_map["response"]] = response
     df.at[row_index, col_map["contexts"]] = contexts_str
 
@@ -197,8 +199,17 @@ def main():
     dataset = EvaluationDataset(samples=answered_samples)
     
     # Compute metric scores
+    rubrics = {
+        "score1_description": "The response is entirely incorrect and fails to address any aspect of the reference.",
+        "score2_description": "The response contains partial accuracy but includes major errors or significant omissions that affect its relevance to the reference.",
+        "score3_description": "The response is mostly accurate but lacks clarity, thoroughness, or minor details needed to fully address the reference.",
+        "score4_description": "The response is accurate and clear, with only minor omissions or slight inaccuracies in addressing the reference.",
+        "score5_description": "The response is completely accurate, clear, and thoroughly addresses the reference without any errors or omissions.",
+    }
+    rubric_scorer = RubricsScore(rubrics=rubrics)
     correctness_instance = FactualCorrectness()
-    scores = evaluate(dataset, [context_precision, context_recall, faithfulness, correctness_instance], llm=llm)
+
+    scores = evaluate(dataset, [context_precision, context_recall, faithfulness, correctness_instance, rubric_scorer], llm=llm)
     print(scores)
 
     # Remove any NaN values
@@ -218,10 +229,14 @@ def main():
     factual_correctness_array = np.array(factual_correctness_scores)
     factual_correctness_scores_clean = factual_correctness_array[~np.isnan(factual_correctness_array)]
 
+    rubric_scores = scores['domain_specific_rubrics']
+    rubric_array = np.array(rubric_scores)
+    rubric_scores_clean = rubric_array[~np.isnan(rubric_array)]
+
     # Print per question answer and scores
     for i, sample in enumerate(answered_samples):
         print("\n-----")
-        print(f"precision: {context_precision_scores[i]}, recall: {context_recall_scores[i]}, faithfulness: {faithfulness_scores[i]}, correctness: {factual_correctness_scores[i]}")
+        print(f"precision: {context_precision_scores[i]}, recall: {context_recall_scores[i]}, faithfulness: {faithfulness_scores[i]}, correctness: {factual_correctness_scores[i]}, rubric: {rubric_scores[i]}")
         print("Question: ", sample.user_input)
         print("Answer: ", sample.reference)
         print("Response: ", sample.response)
@@ -231,6 +246,7 @@ def main():
                                            recall=context_recall_scores[i],
                                            faithfulness=faithfulness_scores[i],
                                            correctness=factual_correctness_scores[i],
+                                           rubric=rubric_scores[i],
                                            response=sample.response,
                                            contexts=sample.retrieved_contexts)
 
@@ -239,6 +255,7 @@ def main():
     recall = np.mean(context_recall_scores_clean)
     faithfulness_score = np.mean(faithfulness_scores_clean)
     factual_correctness_score = np.mean(factual_correctness_scores_clean)
+    rubric_score = np.mean(rubric_scores_clean)
 
     # Print Final Results
     print("\n\nEvaluation Metrics:")
@@ -246,6 +263,7 @@ def main():
     print(f"Context Recall Score: {recall:.2f}")
     print(f"Faithfulness Score: {faithfulness_score:.2f}")
     print(f"Factual Correctness Score: {factual_correctness_score:.2f}")
+    print(f"Rubric Score: {rubric_score:.2f}")
 
 if __name__ == "__main__":
     main()
