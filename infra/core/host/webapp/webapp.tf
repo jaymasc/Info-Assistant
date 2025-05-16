@@ -273,6 +273,13 @@ resource "azurerm_private_endpoint" "backendPrivateEndpoint" {
     name                 = "${var.name}PrivateDnsZoneGroup"
     private_dns_zone_ids = var.private_dns_zone_ids
   }
+
+  ip_configuration {
+    name               = "${var.name}-static-ip-config"
+    private_ip_address = "10.0.8.68"
+    member_name        = "sites"
+    subresource_name   = "sites"
+  }
 }
 
 data "azuread_application" "app" {
